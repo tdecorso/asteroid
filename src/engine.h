@@ -1,5 +1,6 @@
 #include "platform.h"
 #include "framebuffer.h"
+#include "sprite.h"
 
 typedef struct {
     sdl_platform_t platform;
@@ -20,3 +21,6 @@ bool engine_IsKeyPressed(engine_t* e, int scancode);
 bool engine_IsKeyReleased(engine_t* e, int scancode);
 bool engine_IsKeyDown(engine_t* e, int scancode);
 void engine_SetTargetFPS(engine_t* e, int fps);
+void engine_DrawText(engine_t* e, int x, int y, char* text, int scale, pixel_t color);
+void engine_DrawSprite(engine_t* e, sprite_t* sprite);
+

@@ -1,13 +1,12 @@
 #pragma once
 
 #include "color.h"
+#include "v2.h"
+#include "v4.h"
 
 typedef struct {
-    float x, y, z, w;
-} v4_t;
-
-typedef struct {
-    v4_t pos;
+    v4_t    pos;
     color_t color;
-    float inv_w;
+    v2_t    uv;
+    float   inv_w;
 } vertex_t;

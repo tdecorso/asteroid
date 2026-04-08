@@ -8,6 +8,10 @@ set(SRCS
     src/platform.c
     src/framebuffer.c
     src/rasterizer.c
+    src/texture.c
+    src/quad.c
+    src/transform2D.c
+    src/projection.c
     src/engine.c
     src/main.c)
 

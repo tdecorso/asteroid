@@ -1,6 +1,10 @@
 #include "engine.h"
 #include "framebuffer.h"
 #include "platform.h"
+#include "rasterizer.h"
+#include "quad.h"
+#include "transform2D.h"
+#include <stdio.h>
 
 bool engine_Init(engine_t* e) {
     return sdl_platform_Init(&e->platform);
@@ -59,4 +63,89 @@ bool engine_IsKeyDown(engine_t* e, int scancode) {
 
 void engine_SetTargetFPS(engine_t* e, int fps) {
     e->target_dt = 1 / (double) fps;
+}
+
+void engine_DrawText(engine_t* e, int x, int y, char* text, int scale, pixel_t color) {
+    rasterizer_FillText(&e->fb, x, y, text, scale, color);
+}
+
+static vertex_t perspective_divide(vertex_t v) {
+    float inv_w = 1.0f / v.pos.w;
+    vertex_t r = {0};
+
+    r.pos.x = v.pos.x * inv_w;
+    r.pos.y = v.pos.y * inv_w;
+    r.pos.z = v.pos.z * inv_w;
+    r.pos.w = v.pos.w;
+
+    r.color.r = v.color.r * inv_w;
+    r.color.g = v.color.g * inv_w;
+    r.color.b = v.color.b * inv_w;
+    r.color.a = v.color.a * inv_w;
+
+    r.uv.x = v.uv.x * inv_w;
+    r.uv.y = v.uv.y * inv_w;
+
+    r.inv_w = inv_w;
+
+    return r;
+}
+
+static vertex_t viewport_transform(float left, float width, float top, float height, vertex_t ndc) {
+    vertex_t v = {0};
+    v.pos.x = left + (ndc.pos.x + 1.0f) * width * 0.5f;
+    v.pos.y =  top + (1.0f - ndc.pos.y) * height * 0.5f;
+    v.pos.z = (ndc.pos.z + 1.0f) * 0.5f;
+    v.pos.w = ndc.pos.w;
+    v.color = ndc.color;
+    v.uv    = ndc.uv;
+    v.inv_w = ndc.inv_w;
+    return v;
+}
+
+static void dump_vertex(const char* label, vertex_t v) {
+    printf("%s: pos=(%f, %f, %f, %f) inv_w=%f uv=(%f, %f)\n",
+        label,
+        v.pos.x, v.pos.y, v.pos.z, v.pos.w,
+        v.inv_w,
+        v.uv.x, v.uv.y
+    );
+}
+
+void engine_DrawSprite(engine_t* e, sprite_t* sprite) {
+    quad_t quad = quad_Template();
+
+    transform2D_t transform = {
+        sprite->position,
+        sprite->scale,
+        sprite->rotation
+    };
+
+    quad_Transform2D(&quad, &transform);
+
+    float left   = -e->fb.width  * 0.5f;
+    float right  =  e->fb.width  * 0.5f;
+    float bottom = -e->fb.height * 0.5f;
+    float top    =  e->fb.height * 0.5f;
+
+    quad_OrthoProject(&quad, left, right, bottom, top);
+
+    quad.v1 = perspective_divide(quad.v1);
+    quad.v2 = perspective_divide(quad.v2);
+    quad.v3 = perspective_divide(quad.v3);
+    quad.v4 = perspective_divide(quad.v4);
+
+    quad.v1 = viewport_transform(0, (float)e->fb.width, 0, (float)e->fb.height, quad.v1);
+    quad.v2 = viewport_transform(0, (float)e->fb.width, 0, (float)e->fb.height, quad.v2);
+    quad.v3 = viewport_transform(0, (float)e->fb.width, 0, (float)e->fb.height, quad.v3);
+    quad.v4 = viewport_transform(0, (float)e->fb.width, 0, (float)e->fb.height, quad.v4);
+
+    rasterizer_FillQuad(
+        &e->fb,
+        quad.v1,
+        quad.v2,
+        quad.v3,
+        quad.v4,
+        sprite->texture
+    );
 }
