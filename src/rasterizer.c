@@ -1,6 +1,5 @@
 #include "rasterizer.h"
 #include "font8x8/font8x8.h"
-#include <stdio.h>
 
 #define abs(x) ((x) > 0 ? (x) : -(x))
 #define max2(a, b) ((a) > (b) ? (a) : (b))
@@ -89,7 +88,6 @@ void rasterizer_FillTriangle(framebuffer_t* fb, vertex_t v1, vertex_t v2, vertex
                              texture_t* texture) {
     if (!fb) return;
 
-    // --- Bounding box ---
     int xmin = min3(v1.pos.x, v2.pos.x, v3.pos.x);
     int ymin = min3(v1.pos.y, v2.pos.y, v3.pos.y);
     int xmax = max3(v1.pos.x, v2.pos.x, v3.pos.x);
@@ -223,8 +221,8 @@ void rasterizer_FillTriangle(framebuffer_t* fb, vertex_t v1, vertex_t v2, vertex
     }
 }
 
-void rasterizer_FillQuad(framebuffer_t* fb, vertex_t v1, vertex_t v2, vertex_t v3, vertex_t v4,
-                         texture_t* texture) {
+void rasterizer_FillQuad2D(framebuffer_t* fb, vertex_t v1, vertex_t v2, vertex_t v3, vertex_t v4,
+                               texture_t* texture) {
     rasterizer_FillTriangle(fb, v1, v2, v3, texture);
     rasterizer_FillTriangle(fb, v1, v3, v4, texture);
 }

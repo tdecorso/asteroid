@@ -9,9 +9,10 @@ set(SRCS
     src/framebuffer.c
     src/rasterizer.c
     src/texture.c
-    src/quad.c
+    src/quad2D.c
     src/transform2D.c
     src/projection.c
+    src/camera2D.c
     src/engine.c
     src/main.c)
 

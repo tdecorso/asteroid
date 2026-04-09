@@ -1,6 +1,7 @@
 #include "platform.h"
 #include "framebuffer.h"
 #include "sprite.h"
+#include "camera2D.h"
 
 typedef struct {
     sdl_platform_t platform;
@@ -8,6 +9,7 @@ typedef struct {
     double dt;
     double frame_start;
     double target_dt;
+    camera2D_t camera2D;
 } engine_t;
 
 bool engine_Init(engine_t* e);

@@ -5,8 +5,8 @@
 #define SCREEN_W 800
 #define SCREEN_H 600
 
-const pixel_t BG_COLOR     = {170, 170, 170, 255};
-const pixel_t UI_COLOR     = { 60,  60,  60, 255};
+const pixel_t BG_COLOR     = { 90, 100,  90, 255};
+const pixel_t UI_COLOR     = {200, 200, 200, 255};
 const pixel_t RED          = {  0,   0, 255, 255};
 
 typedef enum {
@@ -14,7 +14,7 @@ typedef enum {
     PLAY,
 } scene_e;
 
-const char* tex_path = "/home/tony/dev/games/asteroid/build/assets/Fighter/Idle.png";
+const char* tex_path = "/home/tony/dev/asteroid/build/assets/Fighter/Idle.png";
 
 int main(void) {
     engine_t engine = {0};
@@ -85,6 +85,9 @@ int main(void) {
 
                 vx *= 0.95f;
                 vy *= 0.95f;
+
+                engine.camera2D.position = player.position;
+
                 break;
             }
         }

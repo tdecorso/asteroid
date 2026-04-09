@@ -2,11 +2,13 @@
 #include "framebuffer.h"
 #include "platform.h"
 #include "rasterizer.h"
-#include "quad.h"
+#include "quad2D.h"
 #include "transform2D.h"
 #include <stdio.h>
 
 bool engine_Init(engine_t* e) {
+    e->camera2D.position = (v2_t) {0};
+    e->camera2D.zoom = 1.0f;
     return sdl_platform_Init(&e->platform);
 }
 
@@ -113,7 +115,7 @@ static void dump_vertex(const char* label, vertex_t v) {
 }
 
 void engine_DrawSprite(engine_t* e, sprite_t* sprite) {
-    quad_t quad = quad_Template();
+    quad2D_t quad = quad2D_Template();
 
     transform2D_t transform = {
         sprite->position,
@@ -121,14 +123,16 @@ void engine_DrawSprite(engine_t* e, sprite_t* sprite) {
         sprite->rotation
     };
 
-    quad_Transform2D(&quad, &transform);
+    quad2D_Transform2D(&quad, &transform);
+
+    quad2D_View(&quad, &e->camera2D);
 
     float left   = -e->fb.width  * 0.5f;
     float right  =  e->fb.width  * 0.5f;
     float bottom = -e->fb.height * 0.5f;
     float top    =  e->fb.height * 0.5f;
 
-    quad_OrthoProject(&quad, left, right, bottom, top);
+    quad2D_OrthoProject(&quad, left, right, bottom, top);
 
     quad.v1 = perspective_divide(quad.v1);
     quad.v2 = perspective_divide(quad.v2);
@@ -140,7 +144,7 @@ void engine_DrawSprite(engine_t* e, sprite_t* sprite) {
     quad.v3 = viewport_transform(0, (float)e->fb.width, 0, (float)e->fb.height, quad.v3);
     quad.v4 = viewport_transform(0, (float)e->fb.width, 0, (float)e->fb.height, quad.v4);
 
-    rasterizer_FillQuad(
+    rasterizer_FillQuad2D(
         &e->fb,
         quad.v1,
         quad.v2,
