@@ -5,9 +5,8 @@
 #define SCREEN_W 800
 #define SCREEN_H 600
 
-const pixel_t BG_COLOR     = { 90, 100,  90, 255};
-const pixel_t UI_COLOR     = {200, 200, 200, 255};
-const pixel_t RED          = {  0,   0, 255, 255};
+const pixel_t BG_COLOR = { 22,   8,  12, 255};  // deep violet-black
+const pixel_t UI_COLOR = {255, 150, 200, 255};  // soft purple
 
 typedef enum {
     MENU,
