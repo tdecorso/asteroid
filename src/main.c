@@ -14,7 +14,10 @@ typedef enum {
     PLAY,
 } scene_e;
 
-const char* tex_path = "/home/tony/dev/asteroid/build/assets/Fighter/Idle.png";
+const char* tex1 = "/home/tony/dev/asteroid/build/assets/Fighter/Idle.png";
+const char* tex2 = "/home/tony/dev/asteroid/build/assets/Meteors/Meteor_02.png";
+
+static void update_camera(sprite_t* player, camera2D_t* cam, float dt);
 
 int main(void) {
     engine_t engine = {0};
@@ -36,17 +39,28 @@ int main(void) {
     char fps_text[64];
     double fps_smooth = 0.0;
 
-    texture_t idle_tex = {0};
-    if (!texture_Create(&idle_tex, tex_path)) {
-        printf("[ERROR] Could not load texture at %s\n", tex_path);
+    texture_t player_texture = {0};
+    texture_t asteroid_texture = {0};
+
+    if (!texture_Create(&player_texture, tex1)) {
+        printf("[ERROR] Could not load texture at %s\n", tex1);
         return 1;
     }
 
-    sprite_t player = {.texture = &idle_tex, 
-                       .position = {0.0f, 0.0f}, 
+    if (!texture_Create(&asteroid_texture, tex2)) {
+        printf("[ERROR] Could not load texture at %s\n", tex2);
+        return 1;
+    }
+
+    sprite_t player = {.texture = &player_texture, 
+                       .position = {0.0f, 0.0f, 0.0f}, 
                        .scale = {200.0f, 200.0f}, 
                        .rotation = 0};
 
+    sprite_t asteroid = {.texture = &asteroid_texture,
+                         .position = {200.0f, 100.0f, 0.1f},
+                         .scale = {200.0f, 200.0f},
+                         .rotation = 0};
     float vx = 0.0f;
     float vy = 0.0f;
 
@@ -86,7 +100,7 @@ int main(void) {
                 vx *= 0.95f;
                 vy *= 0.95f;
 
-                engine.camera2D.position = player.position;
+                update_camera(&player, &engine.camera2D, engine.dt);
 
                 break;
             }
@@ -102,6 +116,7 @@ int main(void) {
             case PLAY:
                 snprintf(fps_text, sizeof(fps_text), "FPS: %.2f", fps_smooth);
                 engine_DrawText(&engine, 5, 5, fps_text, 1, UI_COLOR);
+                engine_DrawSprite(&engine, &asteroid);
                 engine_DrawSprite(&engine, &player);
                 break;
         }
@@ -109,6 +124,14 @@ int main(void) {
         engine_EndFrame(&engine);
     }
 
+    texture_Destroy(&player_texture);
     engine_Quit(&engine);
+
     return 0;
+}
+
+static void update_camera(sprite_t* player, camera2D_t* cam, float dt) {
+    float t = 5.0f * dt;
+    cam->position.x += (player->position.x - cam->position.x) * t;
+    cam->position.y += (player->position.y - cam->position.y) * t;
 }

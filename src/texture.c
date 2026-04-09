@@ -14,3 +14,8 @@ bool texture_Create(texture_t* t, const char* path) {
     t->data = data;
     return true;
 }
+
+void texture_Destroy(texture_t* t) {
+    if (!t) return;
+    stbi_image_free(t->data);
+}

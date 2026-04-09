@@ -1,10 +1,11 @@
 #pragma once
 
 #include "v2.h"
+#include "v3.h"
 #include "v4.h"
 
 typedef struct {
-    v2_t position;
+    v3_t position;
     v2_t scale;
     float rotation;
 } transform2D_t;

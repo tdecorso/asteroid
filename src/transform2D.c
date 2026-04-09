@@ -17,6 +17,7 @@ v4_t transform2D_apply(transform2D_t* t, v4_t p) {
     v4_t r = p;
     r.x = rx;
     r.y = ry;
+    r.z = t->position.z;
 
     return r;
 }

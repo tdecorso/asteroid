@@ -84,7 +84,8 @@ static inline float edge(int px, int py, int ax, int ay, int bx, int by) {
     return (px - ax) * (by - ay) - (py - ay) * (bx - ax);
 }
 
-void rasterizer_FillTriangle(framebuffer_t* fb, vertex_t v1, vertex_t v2, vertex_t v3,
+void rasterizer_FillTriangle(framebuffer_t* fb,
+                             vertex_t v1, vertex_t v2, vertex_t v3,
                              texture_t* texture) {
     if (!fb) return;
 
@@ -104,7 +105,7 @@ void rasterizer_FillTriangle(framebuffer_t* fb, vertex_t v1, vertex_t v2, vertex
 
     if (area == 0.0f) return;
 
-    if (area < 0) {
+    if (area < 0.0f) {
         vertex_t tmp = v2;
         v2 = v3;
         v3 = tmp;
@@ -116,17 +117,9 @@ void rasterizer_FillTriangle(framebuffer_t* fb, vertex_t v1, vertex_t v2, vertex
     for (int y = ymin; y < ymax; ++y) {
         for (int x = xmin; x < xmax; ++x) {
 
-            float w1 = edge(x, y,
-                            v2.pos.x, v2.pos.y,
-                            v3.pos.x, v3.pos.y);
-
-            float w2 = edge(x, y,
-                            v3.pos.x, v3.pos.y,
-                            v1.pos.x, v1.pos.y);
-
-            float w3 = edge(x, y,
-                            v1.pos.x, v1.pos.y,
-                            v2.pos.x, v2.pos.y);
+            float w1 = edge(x, y, v2.pos.x, v2.pos.y, v3.pos.x, v3.pos.y);
+            float w2 = edge(x, y, v3.pos.x, v3.pos.y, v1.pos.x, v1.pos.y);
+            float w3 = edge(x, y, v1.pos.x, v1.pos.y, v2.pos.x, v2.pos.y);
 
             if (w1 >= 0 && w2 >= 0 && w3 >= 0) {
 
@@ -134,48 +127,36 @@ void rasterizer_FillTriangle(framebuffer_t* fb, vertex_t v1, vertex_t v2, vertex
                 w2 *= inv_area;
                 w3 *= inv_area;
 
+                float inv_w = w1 * v1.inv_w + w2 * v2.inv_w + w3 * v3.inv_w;
+                if (inv_w == 0.0f) continue;
+
+                float recip = 1.0f / inv_w;
+
                 int index = x + y * fb->width;
 
                 float z = w1 * v1.pos.z +
                           w2 * v2.pos.z +
                           w3 * v3.pos.z;
 
-                if (z < fb->depth[index]) {
-                    fb->depth[index] = z;
+                float r = (w1 * v1.color.r +
+                           w2 * v2.color.r +
+                           w3 * v3.color.r) * recip;
 
-                    float inv_w =
-                        w1 * v1.inv_w +
-                        w2 * v2.inv_w +
-                        w3 * v3.inv_w;
+                float g = (w1 * v1.color.g +
+                           w2 * v2.color.g +
+                           w3 * v3.color.g) * recip;
 
-                    if (inv_w == 0.0f) continue;
+                float b = (w1 * v1.color.b +
+                           w2 * v2.color.b +
+                           w3 * v3.color.b) * recip;
 
-                    float recip = 1.0f / inv_w;
+                float a = (w1 * v1.color.a +
+                           w2 * v2.color.a +
+                           w3 * v3.color.a) * recip;
 
-                    float r = (w1 * v1.color.r +
-                               w2 * v2.color.r +
-                               w3 * v3.color.r) * recip;
+                float src_r, src_g, src_b, src_a;
 
-                    float g = (w1 * v1.color.g +
-                               w2 * v2.color.g +
-                               w3 * v3.color.g) * recip;
-
-                    float b = (w1 * v1.color.b +
-                               w2 * v2.color.b +
-                               w3 * v3.color.b) * recip;
-
-                    float a = (w1 * v1.color.a +
-                               w2 * v2.color.a +
-                               w3 * v3.color.a) * recip;
-
-                    if (!texture) {
-                        fb->pixels[index].r = (uint8_t)(r * 255.0f);
-                        fb->pixels[index].g = (uint8_t)(g * 255.0f);
-                        fb->pixels[index].b = (uint8_t)(b * 255.0f);
-                        fb->pixels[index].a = (uint8_t)(a * 255.0f);
-                        continue;
-                    }
-
+                if (texture) {
                     float u = (w1 * v1.uv.x +
                                w2 * v2.uv.x +
                                w3 * v3.uv.x) * recip;
@@ -190,31 +171,48 @@ void rasterizer_FillTriangle(framebuffer_t* fb, vertex_t v1, vertex_t v2, vertex
                     unsigned char* tpixel =
                         &texture->data[(tx + ty * texture->width) * 4];
 
-                    float src_r = tpixel[0] / 255.0f;
-                    float src_g = tpixel[1] / 255.0f;
-                    float src_b = tpixel[2] / 255.0f;
-                    float src_a = tpixel[3] / 255.0f;
+                    src_r = tpixel[0] / 255.0f;
+                    src_g = tpixel[1] / 255.0f;
+                    src_b = tpixel[2] / 255.0f;
+                    src_a = tpixel[3] / 255.0f;
 
-                    pixel_t dst = fb->pixels[index];
-
-                    float dst_r = dst.r / 255.0f;
-                    float dst_g = dst.g / 255.0f;
-                    float dst_b = dst.b / 255.0f;
-                    float dst_a = dst.a / 255.0f;
+                    if (src_a < 0.01f) continue;
 
                     src_r *= r;
                     src_g *= g;
                     src_b *= b;
+                } else {
+                    src_r = r;
+                    src_g = g;
+                    src_b = b;
+                    src_a = a;
+                }
 
-                    float out_a = src_a + dst_a * (1.0f - src_a);
-                    float out_r = (src_r * src_a + dst_r * dst_a * (1.0f - src_a));
-                    float out_g = (src_g * src_a + dst_g * dst_a * (1.0f - src_a));
-                    float out_b = (src_b * src_a + dst_b * dst_a * (1.0f - src_a));
+                bool is_opaque = (src_a >= 0.99f);
 
-                    fb->pixels[index].r = (uint8_t)(out_r * 255.0f);
-                    fb->pixels[index].g = (uint8_t)(out_g * 255.0f);
-                    fb->pixels[index].b = (uint8_t)(out_b * 255.0f);
-                    fb->pixels[index].a = (uint8_t)(out_a * 255.0f);
+                // Depth test only for opaque pixels
+                if (is_opaque && z >= fb->depth[index]) continue;
+
+                pixel_t dst = fb->pixels[index];
+
+                float dst_r = dst.r / 255.0f;
+                float dst_g = dst.g / 255.0f;
+                float dst_b = dst.b / 255.0f;
+                float dst_a = dst.a / 255.0f;
+
+                float out_r = src_r * src_a + dst_r * (1.0f - src_a);
+                float out_g = src_g * src_a + dst_g * (1.0f - src_a);
+                float out_b = src_b * src_a + dst_b * (1.0f - src_a);
+                float out_a = src_a + dst_a * (1.0f - src_a);
+
+                fb->pixels[index].r = (uint8_t)(out_r * 255.0f);
+                fb->pixels[index].g = (uint8_t)(out_g * 255.0f);
+                fb->pixels[index].b = (uint8_t)(out_b * 255.0f);
+                fb->pixels[index].a = (uint8_t)(out_a * 255.0f);
+
+                // Depth write only for opaque pixels
+                if (is_opaque) {
+                    fb->depth[index] = z;
                 }
             }
         }
