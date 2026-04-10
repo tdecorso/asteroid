@@ -5,8 +5,8 @@
 #define SCREEN_W 800
 #define SCREEN_H 600
 
-#define MAX_ASTEROIDS 12
-#define MAX_BULLETS 64
+#define MAX_ASTEROIDS 8
+#define MAX_BULLETS 32
 
 #define WRAP_MARGIN 80.0f
 #define FIRE_COOLDOWN 0.25f
@@ -51,19 +51,19 @@ typedef struct {
     bool thrusting;
 } player_t;
 
-const char* tex1 = "/home/tony/dev/asteroid/build/assets/ship_1.png";
-const char* tex2 = "/home/tony/dev/asteroid/build/assets/meteor.png";
-const char* tex3 = "/home/tony/dev/asteroid/build/assets/laser.png";
+const char* tex1 = "/home/tony/dev/asteroid/assets/ship_1.png";
+const char* tex2 = "/home/tony/dev/asteroid/assets/meteor.png";
+const char* tex3 = "/home/tony/dev/asteroid/assets/laser.png";
 
-const char* sound1 = "/home/tony/dev/asteroid/build/assets/laser.mp3";
-const char* sound2 = "/home/tony/dev/asteroid/build/assets/hit.mp3";
-const char* sound3 = "/home/tony/dev/asteroid/build/assets/explosion.mp3";
-const char* sound4 = "/home/tony/dev/asteroid/build/assets/thrust.mp3";
-const char* sound5 = "/home/tony/dev/asteroid/build/assets/start.mp3";
-const char* sound6 = "/home/tony/dev/asteroid/build/assets/gameover.mp3";
-const char* sound7 = "/home/tony/dev/asteroid/build/assets/win.mp3";
-const char* sound8 = "/home/tony/dev/asteroid/build/assets/gameloop.mp3";
-const char* sound9 = "/home/tony/dev/asteroid/build/assets/dead.mp3";
+const char* sound1 = "/home/tony/dev/asteroid/assets/laser.mp3";
+const char* sound2 = "/home/tony/dev/asteroid/assets/hit.mp3";
+const char* sound3 = "/home/tony/dev/asteroid/assets/explosion.mp3";
+const char* sound4 = "/home/tony/dev/asteroid/assets/thrust.mp3";
+const char* sound5 = "/home/tony/dev/asteroid/assets/start.mp3";
+const char* sound6 = "/home/tony/dev/asteroid/assets/gameover.mp3";
+const char* sound7 = "/home/tony/dev/asteroid/assets/win.mp3";
+const char* sound8 = "/home/tony/dev/asteroid/assets/gameloop.mp3";
+const char* sound9 = "/home/tony/dev/asteroid/assets/dead.mp3";
 
 static float radians(float d) { return M_PI * d / 180.0f; }
 
@@ -308,12 +308,9 @@ static void draw_menu(engine_t* e, float blink_timer) {
     engine_DrawText(e, label_x, table_y + row_h * 2, "Fire",    2, DIM_COLOR);
     engine_DrawText(e, bind_x,  table_y + row_h * 2, "SPACE",   2, UI_COLOR);
 
-    engine_DrawText(e, label_x, table_y + row_h * 3, "Restart", 2, DIM_COLOR);
-    engine_DrawText(e, bind_x,  table_y + row_h * 3, "R",       2, UI_COLOR);
-
     /* Blinking prompt */
     if ((int)(blink_timer * 2.0f) % 2 == 0)
-        engine_DrawText(e, cx - 152, table_y + row_h * 5 + 16,
+        engine_DrawText(e, cx - 152, table_y + row_h * 4 + 16,
                         "Press ENTER to play", 2, UI_COLOR);
 }
 
@@ -475,16 +472,18 @@ int main(void) {
             bullets_vs_asteroids(&engine, bullets, asteroids, &player, &hit_sound, &explosion_sound);
             player_vs_asteroids(&player, asteroids, &engine, &dead_sound);
 
-            if (player.lives <= 0) scene = GAME_OVER;
-            else if (!asteroids_alive(asteroids)) scene = WIN;
+            if (player.lives <= 0) {
+                engine_StopLoop(&engine, &game_loop);
+                engine_PlaySound(&engine, &gameover_sound, 0.4f);
+                scene = GAME_OVER;
+            }
+            else if (!asteroids_alive(asteroids)) {
+                engine_StopLoop(&engine, &game_loop);
+                engine_PlaySound(&engine, &win_sound, 0.8f);
+                scene = WIN;
+            }
         }
         else {
-            /* GAME_OVER / WIN */
-            if (scene == GAME_OVER) {
-                engine_PlaySound(&engine, &gameover_sound, 0.4f);
-            }
-            else engine_PlaySound(&engine, &win_sound, 0.6f);
-
             if (engine_IsKeyPressed(&engine, SDL_SCANCODE_R)) {
                 player_init(&player, &player_tex);
                 asteroids_init(&engine, asteroids, &asteroid_tex);
@@ -493,6 +492,7 @@ int main(void) {
                 smooth_fps = 60.0f;
                 engine_PlaySound(&engine, &start_sound, 0.6f);
                 scene = PLAY;
+                engine_StartLoop(&engine, &game_loop, 1.0f);
             }
 
             engine_StopLoop(&engine, &thrust_loop);
@@ -533,16 +533,16 @@ int main(void) {
             draw_menu(&engine, blink_timer);
         }
         else if (scene == GAME_OVER) {
-            engine_DrawText(&engine, SCREEN_W/2 - 144, SCREEN_H/2 - 40,
+            engine_DrawText(&engine, SCREEN_W/2 - 144, SCREEN_H/2 - 50,
                             "GAME OVER", 4, UI_COLOR);
             engine_DrawText(&engine, SCREEN_W/2 - 144, SCREEN_H/2 + 30,
                             "Press R to restart", 2, UI_COLOR);
         }
         else if (scene == WIN) {
             char txt[128];
-            engine_DrawText(&engine, SCREEN_W/2 - 112, SCREEN_H/2 - 10,
+            engine_DrawText(&engine, SCREEN_W/2 - 112, SCREEN_H/2 - 50,
                             "YOU WIN!", 4, UI_COLOR);
-            engine_DrawText(&engine, SCREEN_W/2 - 168, SCREEN_H/2 + 50,
+            engine_DrawText(&engine, SCREEN_W/2 - 168, SCREEN_H/2 + 30,
                             "Press R to play again", 2, UI_COLOR);
         }
 
