@@ -25,4 +25,5 @@ bool engine_IsKeyDown(engine_t* e, int scancode);
 void engine_SetTargetFPS(engine_t* e, int fps);
 void engine_DrawText(engine_t* e, int x, int y, char* text, int scale, pixel_t color);
 void engine_DrawSprite(engine_t* e, sprite_t* sprite);
+float engine_RandF(engine_t* e, float low, float high);
 

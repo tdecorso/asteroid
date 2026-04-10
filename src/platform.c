@@ -114,3 +114,7 @@ double sdl_platform_DeltaTime(sdl_platform_t* platform) {
 double sdl_platform_GetTime(sdl_platform_t* platform) {
     return SDL_GetPerformanceCounter() * platform->clock.freq_inv;
 }
+
+float sdl_platform_RandF(sdl_platform_t* platform) {
+    return SDL_randf();
+}

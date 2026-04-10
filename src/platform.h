@@ -35,3 +35,4 @@ bool sdl_platform_KeyReleased(sdl_platform_t* platform, int scancode);
 double sdl_platform_BeginFrame(sdl_platform_t* platform);
 double sdl_platform_DeltaTime(sdl_platform_t* platform);
 double sdl_platform_GetTime(sdl_platform_t* platform);
+float sdl_platform_RandF(sdl_platform_t* platform);

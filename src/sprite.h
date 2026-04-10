@@ -6,7 +6,7 @@
 
 typedef struct {
     texture_t* texture;
-    v3_t position;
+    v3_t pos;
     v2_t scale;
-    float rotation;
+    float rot;
 } sprite_t;

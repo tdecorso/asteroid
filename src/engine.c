@@ -118,9 +118,9 @@ void engine_DrawSprite(engine_t* e, sprite_t* sprite) {
     quad2D_t quad = quad2D_Template();
 
     transform2D_t transform = {
-        sprite->position,
+        sprite->pos,
         sprite->scale,
-        sprite->rotation
+        sprite->rot
     };
 
     quad2D_Transform2D(&quad, &transform);
@@ -152,4 +152,8 @@ void engine_DrawSprite(engine_t* e, sprite_t* sprite) {
         quad.v4,
         sprite->texture
     );
+}
+
+float engine_RandF(engine_t* e, float low, float high) {
+    return sdl_platform_RandF(&e->platform) * (high - low) + low;
 }
