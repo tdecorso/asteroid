@@ -286,14 +286,11 @@ static void player_vs_asteroids(player_t* p, asteroid_t* a, engine_t* e, sound_t
     }
 }
 
-/* Draw the menu screen — asteroids drift behind it */
 static void draw_menu(engine_t* e, float blink_timer) {
     int cx = SCREEN_W / 2;
 
-    /* Title */
     engine_DrawText(e, cx - 144, 140, "ASTEROIDS", 4, UI_COLOR);
 
-    /* Controls table */
     const int label_x = cx - 136;
     const int bind_x  = label_x + 176;
     const int row_h   = 22;
@@ -308,7 +305,6 @@ static void draw_menu(engine_t* e, float blink_timer) {
     engine_DrawText(e, label_x, table_y + row_h * 2, "Fire",    2, DIM_COLOR);
     engine_DrawText(e, bind_x,  table_y + row_h * 2, "SPACE",   2, UI_COLOR);
 
-    /* Blinking prompt */
     if ((int)(blink_timer * 2.0f) % 2 == 0)
         engine_DrawText(e, cx - 152, table_y + row_h * 4 + 16,
                         "Press ENTER to play", 2, UI_COLOR);
@@ -321,7 +317,7 @@ int main(void) {
         printf("[ERROR] Failed to init the engine: %s\n", SDL_GetError());
         return 1;
     }
-    engine_CreateWindow(&engine, SCREEN_W, SCREEN_H, "Asteroids");
+    engine_CreateWindow(&engine, SCREEN_W, SCREEN_H, "Asteroid");
     engine_SetTargetFPS(&engine, 60);
 
     texture_t player_tex   = {0};
@@ -535,14 +531,14 @@ int main(void) {
         else if (scene == GAME_OVER) {
             engine_DrawText(&engine, SCREEN_W/2 - 144, SCREEN_H/2 - 90,
                             "GAME OVER", 4, UI_COLOR);
-            engine_DrawText(&engine, SCREEN_W/2 - 144, SCREEN_H/2 + 60,
+            engine_DrawText(&engine, SCREEN_W/2 - 144, SCREEN_H/2 + 70,
                             "Press R to restart", 2, UI_COLOR);
         }
         else if (scene == WIN) {
             char txt[128];
             engine_DrawText(&engine, SCREEN_W/2 - 112, SCREEN_H/2 - 90,
                             "YOU WIN!", 4, UI_COLOR);
-            engine_DrawText(&engine, SCREEN_W/2 - 168, SCREEN_H/2 + 60,
+            engine_DrawText(&engine, SCREEN_W/2 - 168, SCREEN_H/2 + 70,
                             "Press R to play again", 2, UI_COLOR);
         }
 
