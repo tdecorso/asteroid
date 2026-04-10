@@ -48,11 +48,22 @@ typedef struct {
     int lives;
     float fire_timer;
     int invincible_timer;
+    bool thrusting;
 } player_t;
 
 const char* tex1 = "/home/tony/dev/asteroid/build/assets/ship_1.png";
 const char* tex2 = "/home/tony/dev/asteroid/build/assets/meteor.png";
 const char* tex3 = "/home/tony/dev/asteroid/build/assets/laser.png";
+
+const char* sound1 = "/home/tony/dev/asteroid/build/assets/laser.mp3";
+const char* sound2 = "/home/tony/dev/asteroid/build/assets/hit.mp3";
+const char* sound3 = "/home/tony/dev/asteroid/build/assets/explosion.mp3";
+const char* sound4 = "/home/tony/dev/asteroid/build/assets/thrust.mp3";
+const char* sound5 = "/home/tony/dev/asteroid/build/assets/start.mp3";
+const char* sound6 = "/home/tony/dev/asteroid/build/assets/gameover.mp3";
+const char* sound7 = "/home/tony/dev/asteroid/build/assets/win.mp3";
+const char* sound8 = "/home/tony/dev/asteroid/build/assets/gameloop.mp3";
+const char* sound9 = "/home/tony/dev/asteroid/build/assets/dead.mp3";
 
 static float radians(float d) { return M_PI * d / 180.0f; }
 
@@ -121,7 +132,7 @@ static void bullets_init(bullet_t* b, texture_t* t) {
     }
 }
 
-static void bullet_spawn(bullet_t* b, player_t* p) {
+static void bullet_spawn(bullet_t* b, player_t* p, engine_t* e, sound_t* shoot) {
     if (p->fire_timer > 0.0f) return;
 
     for (int i = 0; i < MAX_BULLETS; i++) {
@@ -136,6 +147,8 @@ static void bullet_spawn(bullet_t* b, player_t* p) {
 
             b[i].life = 1.5f;
             p->fire_timer = FIRE_COOLDOWN;
+
+            engine_PlaySound(e, shoot, 0.2f);
             return;
         }
     }
@@ -162,8 +175,9 @@ static void bullets_draw(engine_t* e, bullet_t* b) {
     }
 }
 
-static void asteroid_split(engine_t* e, asteroid_t* asteroids, asteroid_t* a) {
+static void asteroid_split(engine_t* e, asteroid_t* asteroids, asteroid_t* a, sound_t* explosion) {
     if (a->size == AST_SMALL) {
+        engine_PlaySound(e, explosion, 0.5f);
         a->active = 0;
         return;
     }
@@ -238,7 +252,7 @@ static int asteroids_alive(asteroid_t* a) {
     return 0;
 }
 
-static void bullets_vs_asteroids(engine_t* e, bullet_t* b, asteroid_t* a, player_t* p) {
+static void bullets_vs_asteroids(engine_t* e, bullet_t* b, asteroid_t* a, player_t* p, sound_t* hit, sound_t* explosion) {
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (!b[i].active) continue;
 
@@ -246,21 +260,23 @@ static void bullets_vs_asteroids(engine_t* e, bullet_t* b, asteroid_t* a, player
             if (!a[j].active) continue;
 
             if (circle_collide(b[i].sprite.pos, 4, a[j].sprite.pos, asteroid_radius(&a[j]))) {
+                engine_PlaySound(e, hit, 1.0f);
                 b[i].active = 0;
-                asteroid_split(e, a, &a[j]);
+                asteroid_split(e, a, &a[j], explosion);
                 break;
             }
         }
     }
 }
 
-static void player_vs_asteroids(player_t* p, asteroid_t* a) {
+static void player_vs_asteroids(player_t* p, asteroid_t* a, engine_t* e, sound_t* dead) {
     if (p->invincible_timer > 0) return;
 
     for (int i = 0; i < MAX_ASTEROIDS; i++) {
         if (!a[i].active) continue;
 
         if (circle_collide(p->sprite.pos, 40, a[i].sprite.pos, asteroid_radius(&a[i]))) {
+            engine_PlaySound(e, dead, 1.0f);
             p->lives--;
             p->sprite.pos = (v3_t){0,0,0};
             p->vel = (v2_t){0,0};
@@ -304,7 +320,10 @@ static void draw_menu(engine_t* e, float blink_timer) {
 int main(void) {
     engine_t engine = {0};
 
-    engine_Init(&engine);
+    if (!engine_Init(&engine)) {
+        printf("[ERROR] Failed to init the engine: %s\n", SDL_GetError());
+        return 1;
+    }
     engine_CreateWindow(&engine, SCREEN_W, SCREEN_H, "Asteroids");
     engine_SetTargetFPS(&engine, 60);
 
@@ -312,9 +331,66 @@ int main(void) {
     texture_t asteroid_tex = {0};
     texture_t bullet_tex   = {0};
 
-    texture_Create(&player_tex,   tex1);
-    texture_Create(&asteroid_tex, tex2);
-    texture_Create(&bullet_tex,   tex3);
+    if (!texture_Create(&player_tex,   tex1)) {
+        printf("[ERROR] Failed to load texture %s\n", tex1);
+        return 1;
+    }
+    if (!texture_Create(&asteroid_tex, tex2)) {
+        printf("[ERROR] Failed to load texture %s\n", tex2);
+        return 1;
+    }
+    if (!texture_Create(&bullet_tex,   tex3)) {
+        printf("[ERROR] Failed to load texture %s\n", tex3);
+        return 1;
+    }
+
+    sound_t     laser_sound = {0};
+    sound_t       hit_sound = {0};
+    sound_t explosion_sound = {0};
+    sound_t     start_sound = {0};
+    sound_t  gameover_sound = {0}; 
+    sound_t       win_sound = {0};
+    sound_t      dead_sound = {0};
+
+    loop_t thrust_loop = {0};
+    loop_t   game_loop = {0};
+
+    if (!engine_LoadSound(&engine, sound1, &laser_sound)) {
+        printf("[ERROR] Failed to load sound %s\n", sound1);
+        return 1;
+    }
+    if (!engine_LoadSound(&engine, sound2, &hit_sound)) {
+        printf("[ERROR] Failed to load sound %s\n", sound2);
+        return 1;
+    }
+    if (!engine_LoadSound(&engine, sound3, &explosion_sound)) {
+        printf("[ERROR] Failed to load sound %s\n", sound3);
+        return 1;
+    }
+    if (!engine_LoadLoop(&engine, sound4, &thrust_loop)) {
+        printf("[ERROR] Failed to load loop %s\n", sound4);
+        return 1;
+    }
+    if (!engine_LoadSound(&engine, sound5, &start_sound)) {
+        printf("[ERROR] Failed to load sound %s\n", sound5);
+        return 1;
+    }
+    if (!engine_LoadSound(&engine, sound6, &gameover_sound)) {
+        printf("[ERROR] Failed to load sound %s\n", sound6);
+        return 1;
+    }
+    if (!engine_LoadSound(&engine, sound7, &win_sound)) {
+        printf("[ERROR] Failed to load sound %s\n", sound7);
+        return 1;
+    }
+    if (!engine_LoadLoop(&engine, sound8, &game_loop)) {
+        printf("[ERROR] Failed to load loop %s\n", sound8);
+        return 1;
+    }
+    if (!engine_LoadSound(&engine, sound9, &dead_sound)) {
+        printf("[ERROR] Failed to load sound %s\n", sound9);
+        return 1;
+    }
 
     player_t player;
     player_init(&player, &player_tex);
@@ -331,6 +407,8 @@ int main(void) {
     float blink_timer = 0.0f;
     const float FPS_ALPHA = 0.05f;
 
+    engine_StartLoop(&engine, &game_loop, 1.0f);
+
     while (!engine_WindowShouldClose(&engine)) {
         engine_BeginFrame(&engine);
 
@@ -340,13 +418,13 @@ int main(void) {
         }
 
         blink_timer += engine.dt;
-
-        /* Asteroids drift in the background during every scene */
+        update_camera(&player.sprite, &engine.camera2D, engine.dt);
         asteroids_update(asteroids, &engine.camera2D, engine.dt);
 
         if (scene == MENU) {
             if (engine_IsKeyPressed(&engine, SDL_SCANCODE_RETURN) ||
                 engine_IsKeyPressed(&engine, SDL_SCANCODE_KP_ENTER)) {
+                engine_PlaySound(&engine, &start_sound, 1.0f);
                 player_init(&player, &player_tex);
                 asteroids_init(&engine, asteroids, &asteroid_tex);
                 bullets_init(bullets, &bullet_tex);
@@ -356,11 +434,19 @@ int main(void) {
             }
         }
         else if (scene == PLAY) {
-            if (engine_IsKeyDown(&engine, SDL_SCANCODE_W)) {
+            bool thrusting = engine_IsKeyDown(&engine, SDL_SCANCODE_W);
+            if (thrusting) {
+                if (!player.thrusting) engine_StartLoop(&engine, &thrust_loop, 0.4f);
                 float a = player.sprite.rot + radians(90);
-                player.vel.x -= cosf(a) * 1000 * engine.dt;
-                player.vel.y -= sinf(a) * 1000 * engine.dt;
+                player.vel.x -= cosf(a) * 700 * engine.dt;
+                player.vel.y -= sinf(a) * 700 * engine.dt;
             }
+
+            if (!thrusting && player.thrusting) {
+                engine_StopLoop(&engine, &thrust_loop);
+            }
+
+            player.thrusting = thrusting;
 
             if (engine_IsKeyDown(&engine, SDL_SCANCODE_A))
                 player.sprite.rot += 6 * engine.dt;
@@ -369,8 +455,9 @@ int main(void) {
                 player.sprite.rot -= 6 * engine.dt;
 
             if (engine_IsKeyPressed(&engine, SDL_SCANCODE_SPACE) ||
-                engine_IsKeyDown(&engine,    SDL_SCANCODE_SPACE))
-                bullet_spawn(bullets, &player);
+                engine_IsKeyDown(&engine,    SDL_SCANCODE_SPACE)) {
+                bullet_spawn(bullets, &player, &engine, &laser_sound);
+            }
 
             player.sprite.pos.x += player.vel.x * engine.dt;
             player.sprite.pos.y += player.vel.y * engine.dt;
@@ -385,24 +472,30 @@ int main(void) {
 
             bullets_update(bullets, &engine.camera2D, engine.dt);
 
-            bullets_vs_asteroids(&engine, bullets, asteroids, &player);
-            player_vs_asteroids(&player, asteroids);
+            bullets_vs_asteroids(&engine, bullets, asteroids, &player, &hit_sound, &explosion_sound);
+            player_vs_asteroids(&player, asteroids, &engine, &dead_sound);
 
-            update_camera(&player.sprite, &engine.camera2D, engine.dt);
-
-            if (player.lives <= 0)            scene = GAME_OVER;
+            if (player.lives <= 0) scene = GAME_OVER;
             else if (!asteroids_alive(asteroids)) scene = WIN;
         }
         else {
             /* GAME_OVER / WIN */
+            if (scene == GAME_OVER) {
+                engine_PlaySound(&engine, &gameover_sound, 0.4f);
+            }
+            else engine_PlaySound(&engine, &win_sound, 0.6f);
+
             if (engine_IsKeyPressed(&engine, SDL_SCANCODE_R)) {
                 player_init(&player, &player_tex);
                 asteroids_init(&engine, asteroids, &asteroid_tex);
                 bullets_init(bullets, &bullet_tex);
                 engine.camera2D.position = (v2_t){0};
                 smooth_fps = 60.0f;
+                engine_PlaySound(&engine, &start_sound, 0.6f);
                 scene = PLAY;
             }
+
+            engine_StopLoop(&engine, &thrust_loop);
         }
 
         /* --- Draw --- */
@@ -456,9 +549,22 @@ int main(void) {
         engine_EndFrame(&engine);
     }
 
+    engine_StopLoop(&engine, &game_loop);
+
     texture_Destroy(&player_tex);
     texture_Destroy(&asteroid_tex);
     texture_Destroy(&bullet_tex);
+
+    audio_DestroySound(&laser_sound);
+    audio_DestroySound(&hit_sound);
+    audio_DestroySound(&explosion_sound);
+    audio_DestroySound(&start_sound);
+    audio_DestroySound(&gameover_sound);
+    audio_DestroySound(&win_sound);
+    audio_DestroySound(&dead_sound);
+
+    audio_DestroyLoop(&thrust_loop);
+    audio_DestroyLoop(&game_loop);
 
     engine_Quit(&engine);
     return 0;

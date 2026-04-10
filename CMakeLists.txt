@@ -6,6 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SRCS
     src/platform.c
+    src/audio.c
     src/framebuffer.c
     src/rasterizer.c
     src/texture.c
