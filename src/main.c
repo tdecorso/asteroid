@@ -533,16 +533,16 @@ int main(void) {
             draw_menu(&engine, blink_timer);
         }
         else if (scene == GAME_OVER) {
-            engine_DrawText(&engine, SCREEN_W/2 - 144, SCREEN_H/2 - 50,
+            engine_DrawText(&engine, SCREEN_W/2 - 144, SCREEN_H/2 - 90,
                             "GAME OVER", 4, UI_COLOR);
-            engine_DrawText(&engine, SCREEN_W/2 - 144, SCREEN_H/2 + 30,
+            engine_DrawText(&engine, SCREEN_W/2 - 144, SCREEN_H/2 + 60,
                             "Press R to restart", 2, UI_COLOR);
         }
         else if (scene == WIN) {
             char txt[128];
-            engine_DrawText(&engine, SCREEN_W/2 - 112, SCREEN_H/2 - 50,
+            engine_DrawText(&engine, SCREEN_W/2 - 112, SCREEN_H/2 - 90,
                             "YOU WIN!", 4, UI_COLOR);
-            engine_DrawText(&engine, SCREEN_W/2 - 168, SCREEN_H/2 + 30,
+            engine_DrawText(&engine, SCREEN_W/2 - 168, SCREEN_H/2 + 60,
                             "Press R to play again", 2, UI_COLOR);
         }
 
