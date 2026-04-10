@@ -16,4 +16,4 @@ The engine also supports a 2D camera (position and zoom), ortographic projection
 I noticed that if you increment the number of sprites in the game, performance is quite limited. It was expected, since the engine still does not have any efficient way of managing entities. This will come in the future and I will try to understand what is the limit once you optimize entities management. I also didn't try to compile the project on Windows, but I don't expect any issue since the engine abstracts the platform using SDL.
 
 ## Dependencies
-This project currently depends on libm for math, SDL3 for platform (window + user input) and miniaudio for audio.
+This project currently depends on libm for math, stb_image for texture loading, SDL3 for platform (window + user input) and miniaudio for audio.
