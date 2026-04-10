@@ -17,3 +17,9 @@ I noticed that if you increment the number of sprites in the game, performance i
 
 ## Dependencies
 This project currently depends on libm for math, stb_image for texture loading, SDL3 for platform (window + user input) and miniaudio for audio.
+
+## Credits
+
+The 2D graphics come from the work of <a href="https://axassets.itch.io/">AX Assets</a>.
+
+The sounds come from <a href="https://pixabay.com/">pixabay</a>.
