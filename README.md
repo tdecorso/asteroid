@@ -5,7 +5,7 @@ CPU-only 2D asteroid game in C
 </div>
 
 ## General Info
-This game is the second episode of the experiment "Let's Make a CPU-only game engine in C", in which I try to develop both a game and the engine itself from features that I would probably reuse for other games. You can check the first episode <a href="https://github.com/tdecorso/pong"> here </a>, where I developed a simple 2D pong game.
+This game is the second episode of the experiment "Let's Make a CPU-only game engine in C", in which I try to develop both a game and the engine itself from features that I would probably reuse for other games. You can check the first episode <a href="https://github.com/tdecorso/pong">here</a>, where I developed a simple 2D pong game.
 
 ## Engine new features
 The engine grew substantially from the first episode. It now supports a proper rendering pipeline that you can also adapt to render 3D objects. I limited myself to the classic triangle rasterization through barycentric coordinates interpolation. This lead to sprites! So now you can render your own textures and move them. Keep in mind that in this engine you apply transformations in world-space (the origin is the center of the screen). 
